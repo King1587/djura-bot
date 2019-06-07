@@ -1,0 +1,12 @@
+# Дебажні журнали npm
+npm-debug.log*
+*.log
+
+# Залежності проекту
+node_modules
+mk1
+variables.env
+
+# Тимчасові файли
+*.tmp
+*~
