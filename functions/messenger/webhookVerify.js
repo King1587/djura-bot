@@ -1,5 +1,5 @@
 function webhookVerify(req, res) {
-    const VERIFY_TOKEN = 'abz57ht99oop34';
+    const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];

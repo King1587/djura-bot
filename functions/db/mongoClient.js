@@ -3,7 +3,7 @@ const MongoClient = require('mongodb').MongoClient;
 const uri = process.env.MONGODB_URI;
 
 
-function addEvent(userID, eventName, date) {
+function addEvent(user_id, event_name, date) {
     const mongo = new MongoClient(uri, { useNewUrlParser: true });
     mongo.connect((err, client) => {
         if (err) return console.log('Error to conect to Mongo', err);
@@ -11,8 +11,8 @@ function addEvent(userID, eventName, date) {
         const collection = client.db('djura').collection('events');
     
         let new_event = {
-            event_name: eventName,
-            userID: userID,
+            event_name: event_name,
+            userID: user_id,
             date: date
         };
 
@@ -26,11 +26,11 @@ function addEvent(userID, eventName, date) {
     });
 }
 
-function findUsersEvents(userID) {
+function findUsersEvents(user_id) {
     return MongoClient(uri, { useNewUrlParser: true }).connect().then(client => {
         const collection = client.db('djura').collection('events');
 
-        return collection.find({userID: userID}).toArray();
+        return collection.find({userID: user_id}).toArray();
     }).then(items => {
         return items;
     });

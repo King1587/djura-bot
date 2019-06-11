@@ -4,7 +4,7 @@ const request = require('request');
 const { FACEBOOK_ACCESS_TOKEN } = process.env;
 
 
-function sendTextMessage (userID, text) {
+function sendTextMessage (user_ID, text) {
     return fetch( 
         `https://graph.facebook.com/v3.3/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
         {
@@ -12,7 +12,7 @@ function sendTextMessage (userID, text) {
             method: 'POST',
             body: JSON.stringify({
                 recipient: {
-                    id: userID,
+                    id: user_ID,
                 },
                 message: {
                     text: text,
@@ -22,10 +22,10 @@ function sendTextMessage (userID, text) {
     );
 }
 
-function sendAttachmentMessage (userID, payload) {
+function sendAttachmentMessage (user_ID, payload) {
     const request_body = {
         'recipient': {
-            'id': userID
+            'id': user_ID
         },
         'message': payload
     };

@@ -9,7 +9,7 @@ function formatDateTime(date_time) {
 
     let formatted_row = '';
     const event_times = new Date(date_time).getTime() + CORRECT_TIME_ZOME;
-    const timeAfterOneDay =  event_times + ONE_DAY;
+    const time_after_one_day =  event_times + ONE_DAY;
     const hour = new Date(event_times).getHours();
     let minutes = new Date(event_times).getMinutes();
     if (minutes < 10) minutes = `0${minutes}`;
@@ -17,7 +17,7 @@ function formatDateTime(date_time) {
     const month = new Date(event_times).getMonth();
     console.log('events time:', event_times);
 
-    if (event_times < timeAfterOneDay) {  // If it`s a today`s event
+    if (event_times < time_after_one_day) {  // If it`s a today`s event
         if (minutes === '00') formatted_row = `at ${hour} o'clock`;
         else formatted_row = `at ${hour}:${minutes} o'clock`;
     } else {  // If later
@@ -177,13 +177,13 @@ function removeReminders(sender_psid, user_events, response) {
 }
 
 function welcomeIntent(sender_psid) {
-    const welcomeTemplate = require('./templates/welcomeTemplate');
+    const welcomeTemplate = require('../messenger/templates/welcomeTemplate');
 
     sendAttachmentMessage(sender_psid, welcomeTemplate());
 }
 
 function notify(items) {
-    const notifyTemplate = require('./templates/notifyTemplate');
+    const notifyTemplate = require('../messenger/templates/notifyTemplate');
 
     if (items) {
         for (let event of items) {
