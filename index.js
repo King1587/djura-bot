@@ -1,5 +1,5 @@
 'use strict';
-require('dotenv').config({ path: 'variables.env' });
+// require('dotenv').config({ path: 'variables.env' });
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -20,6 +20,7 @@ app.post('/webhook', webhookMessage);
 
 app.post('/checking', checkingEvents);
 
+// Google Authorization page
 app.get('/google3f3b45ccc4ea4d56.html', (req, res) => {
     res.sendFile(`${__dirname}/static/google3f3b45ccc4ea4d56.html`);
 });
