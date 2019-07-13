@@ -1,8 +1,8 @@
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable no-console */
 const { deleteEvents } = require('./mongoClient');
 const mongoQueue = require('./mongoQueue');
 const { notify } = require('../dialogflow/executorDesires');
+const log = require('../logger')(__filename);
 
 const SIX_MINUTES = 6 * 60 * 1000; // In milliseconds
 const ONE_HOUR = 60 * 60 * 1000;
@@ -15,7 +15,7 @@ function finder(items) {
   const evensToRemind = [];
 
   if (items) {
-    console.log('items length: ', items.length);
+    log.info('items length: ', items.length);
     for (const event of items) {
       const eventTime = new Date(event.date).getTime();
       if (eventTime < timeToDelete) {

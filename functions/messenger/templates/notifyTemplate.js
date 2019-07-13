@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 function notifyTemplate(event) {
   return {
     attachment: {

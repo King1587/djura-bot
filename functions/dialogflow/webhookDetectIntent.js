@@ -1,8 +1,8 @@
-/* eslint-disable no-console */
 const dialogflow = require('dialogflow');
 const { sendTextMessage } = require('../messenger/messageSender');
 const executorDesires = require('./executorDesires');
 const mongoQueue = require('../db/mongoQueue');
+const log = require('../logger')(__filename);
 
 const projectId = 'djura-bot';
 const sessionId = '438456';
@@ -17,17 +17,17 @@ const config = {
 
 function definitionIntent(senderPSID, response) {
   if (response.intent.displayName === 'add_reminders') {
-    console.log('add_reminders intent');
+    log.info('add_reminders intent');
     executorDesires.addReminders(senderPSID, response);
   } else if (response.intent.displayName === 'get_reminders') {
-    console.log('get_reminders intent');
+    log.info('get_reminders intent');
     mongoQueue.getReminders(senderPSID, executorDesires.showReminders);
   } else if (response.intent.displayName === 'remove_reminders') {
-    console.log('remove_reminders intent');
+    log.info('remove_reminders intent');
     mongoQueue.getReminders(senderPSID, executorDesires.removeReminders, response);
   } else if (response.intent.displayName === 'Default Welcome Intent') {
     executorDesires.welcomeIntent(senderPSID);
-    console.log('welcome intent');
+    log.info('welcome intent');
     sendTextMessage(senderPSID, response.fulfillmentText);
   } else {
     sendTextMessage(senderPSID, response.fulfillmentText);
@@ -56,7 +56,7 @@ function detectTextIntent(senderPSID, event) {
       definitionIntent(senderPSID, response);
     })
     .catch(err => {
-      console.error('detectIntent ERROR:', err);
+      log.error('detectIntent ERROR:', err);
     });
 }
 

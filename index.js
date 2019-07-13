@@ -1,16 +1,9 @@
-<<<<<<< HEAD
-/* eslint-disable no-console */
-require('dotenv').config({ path: 'variables.env' });
-=======
-'use strict';
-// require('dotenv').config({ path: 'variables.env' });
->>>>>>> c0e47eb425356b7243d0e05eed05f11185677735
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const webhookVerify = require('./functions/messenger/webhookVerify');
 const webhookMessage = require('./functions/messenger/webhookMessage');
 const checkingEvents = require('./functions/db/checkingEvents');
+const log = require('./functions/logger')(__filename);
 
 const { PORT } = process.env;
 
@@ -18,7 +11,7 @@ const app = express()
   .use(bodyParser.json())
   .use(bodyParser.urlencoded({ extended: true }));
 
-app.listen(PORT, () => console.log(`Webhook is listening on ${PORT} port.`));
+app.listen(PORT, () => log.info(`Webhook is listening on ${PORT} port.`));
 
 app.get('/webhook', webhookVerify);
 

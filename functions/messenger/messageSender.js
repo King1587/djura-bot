@@ -1,6 +1,6 @@
-/* eslint-disable no-console */
 const fetch = require('node-fetch');
 const request = require('request');
+const log = require('../logger')(__filename);
 
 const { FACEBOOK_ACCESS_TOKEN } = process.env;
 
@@ -22,12 +22,12 @@ function sendTextMessage(userID, text) {
   );
 }
 
-function sendAttachmentMessage(userID, payload) {
+function sendAttachmentMessage(userID, message) {
   const requestBody = {
     recipient: {
       id: userID,
     },
-    message: payload,
+    message,
   };
 
   request(
@@ -38,11 +38,8 @@ function sendAttachmentMessage(userID, payload) {
       json: requestBody,
     },
     err => {
-      if (!err) {
-        console.log('message sent!');
-      } else {
-        console.log('Unable to send message:', err);
-      }
+      if (err) log.error('Unable to send message:', err);
+      else log.info('message sent!');
     },
   );
 }

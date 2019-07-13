@@ -1,9 +1,8 @@
-/* eslint-disable no-lonely-if */
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable no-console */
 const { sendTextMessage, sendAttachmentMessage } = require('../messenger/messageSender');
 const { addEvent, deleteEvents } = require('../db/mongoClient');
 const messengerTemplates = require('../messenger/templates');
+const log = require('../logger')(__filename);
 
 function formatDateTime(dateTime) {
   const MONTH_LIST = [
@@ -20,8 +19,8 @@ function formatDateTime(dateTime) {
     'November',
     'December',
   ];
-  const CORRECT_TIME_ZOME = 10800000; // Plus 3 hours to time in milliseconds.
-  const ONE_DAY = 86400000; // One day in milliseconds
+  const CORRECT_TIME_ZOME = 3 * 60 * 60 * 1000; // Plus 3 hours to time in milliseconds.
+  const ONE_DAY = 24 * 60 * 60 * 1000; // One day in milliseconds
 
   let formattedRow = '';
   const eventTimes = new Date(dateTime).getTime() + CORRECT_TIME_ZOME;
@@ -31,7 +30,7 @@ function formatDateTime(dateTime) {
   if (minutes < 10) minutes = `0${minutes}`;
   const day = new Date(eventTimes).getDate();
   const month = new Date(eventTimes).getMonth();
-  console.log('events time:', eventTimes);
+  log.info('events time:', eventTimes);
 
   if (eventTimes < timeAfterOneDay) {
     // If it`s a today`s event
@@ -65,19 +64,17 @@ function timeMaster(dateTime, eventName) {
       startTime: Date.parse(dateTime.structValue.fields.startDateTime.stringValue),
       endTime: Date.parse(dateTime.structValue.fields.endDateTime.stringValue),
     };
-  } else {
-    // If user says "todays", "tomorrows".
-    if (
-      new Date(dateTime.stringValue).getHours() === 12 - CORRECT_TIMEZONE &&
-      eventName.indexOf('12') < 0
-    ) {
-      const dayTime = new Date(dateTime.stringValue).getTime() + CORRECT_TIMEZONE * ONE_HOUR;
-      result = {
-        startTime: dayTime - TWENTY_HOURS,
-        endTime: dayTime + TWENTY_HOURS,
-      };
-    } else result = { startTime: Date.parse(dateTime.stringValue) };
-  }
+    // If user says "todays", "tomorrows":
+  } else if (
+    new Date(dateTime.stringValue).getHours() === 12 - CORRECT_TIMEZONE &&
+    eventName.indexOf('12') < 0
+  ) {
+    const dayTime = new Date(dateTime.stringValue).getTime() + CORRECT_TIMEZONE * ONE_HOUR;
+    result = {
+      startTime: dayTime - TWENTY_HOURS,
+      endTime: dayTime + TWENTY_HOURS,
+    };
+  } else result = { startTime: Date.parse(dateTime.stringValue) };
 
   return result;
 }
@@ -98,11 +95,9 @@ function filterByDate(eventsList, dateTime, eventsName) {
 
 function filterByDuration(eventsList, dateTime, eventsName) {
   const deleteList = [];
-  console.log(`Start time: ${dateTime.startTime}`);
-  console.log(`End time: ${dateTime.endTime}`);
 
   for (const event of eventsList) {
-    console.log(`Event time: ${event.date}`);
+    log.info(`Event time: ${event.date}`);
     if (dateTime.startTime <= event.date && event.date <= dateTime.endTime) {
       if (eventsName) {
         if (filterByName(event.event_name, eventsName)) deleteList.push(event);
@@ -121,7 +116,7 @@ function addReminders(senderPSID, response) {
     dateTime = response.parameters.fields.date_time.structValue.fields.date_time.stringValue;
   } else dateTime = response.parameters.fields.date_time.stringValue;
 
-  console.log(`You reminder: name - ${name}, dateTime - ${dateTime}`);
+  log.info(`You reminder: name - ${name}, dateTime - ${dateTime}`);
 
   if (name && dateTime) {
     // const event_time = Date.parse(date_time);
@@ -144,7 +139,7 @@ function showReminders(senderPSID, items) {
     for (const event of items) {
       if (new Date(event.date).getTime() > currentTime) actualEvents.push(event);
     }
-  console.log('actual events::', actualEvents);
+  log.info('actual events::', actualEvents);
 
   if (actualEvents.length === 1) {
     message = `You have one event: ${actualEvents[0].event_name} ${formatDateTime(
@@ -182,14 +177,14 @@ function removeReminders(senderPSID, userEvents, response) {
       }
     }
 
-    console.log('Delete only with name');
+    log.info('Delete only with name');
 
     // If the user want to remove all his events
   } else if (ifAll) {
     eventsToDelete = userEvents;
   }
 
-  console.log(`Events to delete: ${eventsToDelete}`);
+  log.info(`Events to delete: ${eventsToDelete}`);
 
   if (eventsToDelete) {
     deleteEvents(eventsToDelete);

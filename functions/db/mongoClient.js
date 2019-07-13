@@ -1,14 +1,14 @@
 /* eslint-disable consistent-return */
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable no-console */
 const { MongoClient } = require('mongodb');
+const log = require('../logger')(__filename);
 
 const uri = process.env.MONGODB_URI;
 
 function addEvent(userID, eventName, date) {
   const mongo = new MongoClient(uri, { useNewUrlParser: true });
   mongo.connect((err, client) => {
-    if (err) return console.log('Error to conect to Mongo', err);
+    if (err) return log.error('Error to conect to Mongo', err);
 
     const collection = client.db('djura').collection('events');
 
@@ -18,10 +18,10 @@ function addEvent(userID, eventName, date) {
       date,
     };
 
-    console.log('New event:', newEvent);
+    log.info('New event:', newEvent);
 
     collection.insertOne(newEvent, error => {
-      if (error) return console.log(`ERROR in insert event to database: ${error}`);
+      if (error) return log.info(`ERROR in insert event to database: ${error}`);
 
       client.close();
     });
@@ -57,13 +57,13 @@ function deleteEvents(events) {
     const collection = client.db('djura').collection('events');
 
     for (const event of events) {
-      console.log('event to delete', event);
+      log.info('event to delete', event);
       // eslint-disable-next-line no-underscore-dangle
       collection.deleteOne({ _id: event._id }, error => {
-        if (error) return console.log('delete event error', error);
+        if (error) return log.error('delete event error', error);
 
         // eslint-disable-next-line no-underscore-dangle
-        console.log(`delete event ${event._id} successful`);
+        log.info(`delete event ${event._id} successful`);
       });
     }
   });
@@ -75,13 +75,13 @@ function snooze(eventID, updatedTime) {
   mongo.connect((err, client) => {
     const collection = client.db('djura').collection('events');
 
-    console.log('event to update:', eventID);
-    console.log('date:', updatedTime);
+    log.info('event to update:', eventID);
+    log.info('date:', updatedTime);
 
     collection.updateOne({ _id: eventID }, { $set: { date: updatedTime } }, (error, result) => {
-      if (error) return console.log('ERROR in update Mongo function:', error);
+      if (error) return log.info('ERROR in update Mongo function:', error);
 
-      console.log(result);
+      log.info(result);
     });
   });
 }

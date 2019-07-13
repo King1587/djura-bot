@@ -1,6 +1,6 @@
-/* eslint-disable no-console */
 const webhookDetectIntent = require('../dialogflow/webhookDetectIntent');
 const handlePostback = require('./handlePostback');
+const log = require('../logger')(__filename);
 
 const webhookMessage = (req, res) => {
   const { body } = req;
@@ -10,12 +10,12 @@ const webhookMessage = (req, res) => {
       const event = entry.messaging[0];
       const senderPSID = event.sender.id;
 
-      console.log(event.message);
-      console.log(`Sender PSID: ${senderPSID}`);
+      log.info(event.message);
+      log.info(`Sender PSID: ${senderPSID}`);
 
       if (event.postback) {
         handlePostback(senderPSID, event.postback);
-        console.log('postback:', event.postback);
+        log.info('postback:', event.postback);
       } else if (event.message) {
         webhookDetectIntent(senderPSID, event.message);
       }

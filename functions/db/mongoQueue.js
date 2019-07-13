@@ -1,14 +1,14 @@
-/* eslint-disable no-console */
 const { findUsersEvents, getAllEvents } = require('./mongoClient');
+const log = require('../logger')(__filename);
 
 function getReminders(senderPSID, callback, response) {
   findUsersEvents(senderPSID).then(
     items => {
-      console.log('get reminder items -', items.length);
+      log.info('get reminder items -', items.length);
       callback(senderPSID, items, response);
     },
     err => {
-      console.log('The promise was rejected', err, err.stack);
+      log.error('The promise was rejected', err, err.stack);
     },
   );
 }
@@ -16,11 +16,11 @@ function getReminders(senderPSID, callback, response) {
 function getAllReminder(callback) {
   getAllEvents().then(
     items => {
-      console.log('getAllReminder is working');
+      log.info('getAllReminder is working');
       callback(items);
     },
     err => {
-      console.log('The promis was rejected', err.stack);
+      log.error('The promis was rejected', err.stack);
     },
   );
 }
