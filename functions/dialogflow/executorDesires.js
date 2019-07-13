@@ -1,196 +1,217 @@
-const {sendTextMessage, sendAttachmentMessage} = require('../messenger/messageSender');
-const {addEvent, deleteEvents} = require('../db/mongoClient');
+/* eslint-disable no-lonely-if */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-console */
+const { sendTextMessage, sendAttachmentMessage } = require('../messenger/messageSender');
+const { addEvent, deleteEvents } = require('../db/mongoClient');
+const messengerTemplates = require('../messenger/templates');
 
+function formatDateTime(dateTime) {
+  const MONTH_LIST = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  const CORRECT_TIME_ZOME = 10800000; // Plus 3 hours to time in milliseconds.
+  const ONE_DAY = 86400000; // One day in milliseconds
 
-function formatDateTime(date_time) {
-    const MONTH_LIST = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const CORRECT_TIME_ZOME = 10800000;  // Plus 3 hours to time in milliseconds.
-    const ONE_DAY = 86400000;  // One day in milliseconds
+  let formattedRow = '';
+  const eventTimes = new Date(dateTime).getTime() + CORRECT_TIME_ZOME;
+  const timeAfterOneDay = eventTimes + ONE_DAY;
+  const hour = new Date(eventTimes).getHours();
+  let minutes = new Date(eventTimes).getMinutes();
+  if (minutes < 10) minutes = `0${minutes}`;
+  const day = new Date(eventTimes).getDate();
+  const month = new Date(eventTimes).getMonth();
+  console.log('events time:', eventTimes);
 
-    let formatted_row = '';
-    const event_times = new Date(date_time).getTime() + CORRECT_TIME_ZOME;
-    const time_after_one_day =  event_times + ONE_DAY;
-    const hour = new Date(event_times).getHours();
-    let minutes = new Date(event_times).getMinutes();
-    if (minutes < 10) minutes = `0${minutes}`;
-    const day = new Date(event_times).getDate();
-    const month = new Date(event_times).getMonth();
-    console.log('events time:', event_times);
+  if (eventTimes < timeAfterOneDay) {
+    // If it`s a today`s event
+    if (minutes === '00') formattedRow = `at ${hour} o'clock`;
+    else formattedRow = `at ${hour}:${minutes} o'clock`;
+    // If later:
+  } else if (minutes === '00') formattedRow = `on ${MONTH_LIST[month]} ${day} at ${hour} o'clock`;
+  else formattedRow = `on ${MONTH_LIST[month]} ${day} at ${hour}:${minutes} o'clock`;
 
-    if (event_times < time_after_one_day) {  // If it`s a today`s event
-        if (minutes === '00') formatted_row = `at ${hour} o'clock`;
-        else formatted_row = `at ${hour}:${minutes} o'clock`;
-    } else {  // If later
-        if (minutes === '00') formatted_row = `on ${MONTH_LIST[month]} ${day} at ${hour} o'clock`;
-        else formatted_row = `on ${MONTH_LIST[month]} ${day} at ${hour}:${minutes} o'clock`;
-    }
-
-    return formatted_row;
+  return formattedRow;
 }
 
-function filterByName(event_name, remove_name) {
-    const word_list = remove_name.split(' ');
+function filterByName(eventName, removeName) {
+  const wordList = removeName.split(' ');
 
-    for (let word of word_list) {
-        if (event_name.indexOf(word) < 0) return false;
-    }
+  for (const word of wordList) {
+    if (eventName.indexOf(word) < 0) return false;
+  }
 
-    return true;
+  return true;
 }
 
-function timeMaster(date_time, event_name) {
-    const TWENTY_HOURS = 43200000;
-    const CORRECT_TIMEZONE = 3;
-    const ONE_HOUR = 3600000;
-    let result;
+function timeMaster(dateTime, eventName) {
+  const ONE_HOUR = 60 * 60 * 1000;
+  const TWENTY_HOURS = 12 * 60 * 60 * 1000;
+  const CORRECT_TIMEZONE = 3;
+  let result;
 
-    if (date_time.structValue) {
-        result = {
-            startTime: Date.parse(date_time.structValue.fields.startDateTime.stringValue),
-            endTime: Date.parse(date_time.structValue.fields.endDateTime.stringValue)
-        };
-    } else {
-        // If user says "todays", "tomorrows".
-        if (((new Date(date_time.stringValue).getHours()) === (12 - CORRECT_TIMEZONE)) && (event_name.indexOf('12') < 0)) {
-            const day_time = new Date(date_time.stringValue).getTime() + (CORRECT_TIMEZONE * ONE_HOUR);
-            result = {
-                startTime: day_time - TWENTY_HOURS,
-                endTime: day_time + TWENTY_HOURS
-            };
-        } else result = { startTime: Date.parse(date_time.stringValue) };
-    }
+  if (dateTime.structValue) {
+    result = {
+      startTime: Date.parse(dateTime.structValue.fields.startDateTime.stringValue),
+      endTime: Date.parse(dateTime.structValue.fields.endDateTime.stringValue),
+    };
+  } else {
+    // If user says "todays", "tomorrows".
+    if (
+      new Date(dateTime.stringValue).getHours() === 12 - CORRECT_TIMEZONE &&
+      eventName.indexOf('12') < 0
+    ) {
+      const dayTime = new Date(dateTime.stringValue).getTime() + CORRECT_TIMEZONE * ONE_HOUR;
+      result = {
+        startTime: dayTime - TWENTY_HOURS,
+        endTime: dayTime + TWENTY_HOURS,
+      };
+    } else result = { startTime: Date.parse(dateTime.stringValue) };
+  }
 
-    return result;
+  return result;
 }
 
-function filterByDate(events_list, date_time, events_name) {
-    let delete_list = [];
+function filterByDate(eventsList, dateTime, eventsName) {
+  const deleteList = [];
 
-    for (let event of events_list) {
-        if (event.date === date_time) {
-            if (events_name) {
-                if (filterByName(event.event_name, events_name)) delete_list.push(event);
-            } else delete_list.push(event);
-        }
+  for (const event of eventsList) {
+    if (event.date === dateTime) {
+      if (eventsName) {
+        if (filterByName(event.event_name, eventsName)) deleteList.push(event);
+      } else deleteList.push(event);
     }
+  }
 
-    return delete_list;
+  return deleteList;
 }
 
-function filterByDuration(events_list, date_time, events_name) {
-    let delete_list = [];
-    console.log(`Start time: ${date_time.startTime}`);
-    console.log(`End time: ${date_time.endTime}`);
-    
-    for (let event of events_list) {
-        console.log(`Event time: ${event.date}`);
-        if ((date_time.startTime <= event.date) && (event.date <= date_time.endTime)) {
-            if (events_name) {
-                if (filterByName(event.event_name, events_name)) delete_list.push(event);
-            } else delete_list.push(event);
-        }
-    }
+function filterByDuration(eventsList, dateTime, eventsName) {
+  const deleteList = [];
+  console.log(`Start time: ${dateTime.startTime}`);
+  console.log(`End time: ${dateTime.endTime}`);
 
-    return delete_list;
+  for (const event of eventsList) {
+    console.log(`Event time: ${event.date}`);
+    if (dateTime.startTime <= event.date && event.date <= dateTime.endTime) {
+      if (eventsName) {
+        if (filterByName(event.event_name, eventsName)) deleteList.push(event);
+      } else deleteList.push(event);
+    }
+  }
+
+  return deleteList;
 }
 
-function addReminders(sender_psid, response) {
-    const name = response.parameters.fields.name.stringValue;
-    let date_time = '';
+function addReminders(senderPSID, response) {
+  const name = response.parameters.fields.name.stringValue;
+  let dateTime = '';
 
-    if (response.parameters.fields.date_time.structValue) {
-        date_time = response.parameters.fields.date_time.structValue.fields.date_time.stringValue;
-    } else date_time = response.parameters.fields.date_time.stringValue;
-    
-    console.log(`You reminder: name - ${name}, dateTime - ${date_time}`);    
+  if (response.parameters.fields.date_time.structValue) {
+    dateTime = response.parameters.fields.date_time.structValue.fields.date_time.stringValue;
+  } else dateTime = response.parameters.fields.date_time.stringValue;
 
-    if (name && date_time) {
-        // const event_time = Date.parse(date_time);
+  console.log(`You reminder: name - ${name}, dateTime - ${dateTime}`);
 
-        addEvent(sender_psid, name, date_time);
+  if (name && dateTime) {
+    // const event_time = Date.parse(date_time);
 
-        const response = `Got it! I remind you ${formatDateTime(date_time)} about ${name}`;
-        sendTextMessage(sender_psid, response);
+    addEvent(senderPSID, name, dateTime);
 
-    } else {
-        sendTextMessage(sender_psid, response.fulfillmentText);
-    }
+    const message = `Got it! I remind you ${formatDateTime(dateTime)} about ${name}`;
+    sendTextMessage(senderPSID, message);
+  } else {
+    sendTextMessage(senderPSID, response.fulfillmentText);
+  }
 }
 
-function showReminders(sender_psid, items) {
-    let actual_events = [];
-    const current_time = Date.now();
-    let message = 'You haven`t any events.';
+function showReminders(senderPSID, items) {
+  const actualEvents = [];
+  const currentTime = Date.now();
+  let message = 'You haven`t any events.';
 
-    if (items.length > 0)
-        for (let event of items) {
-            if (new Date(event.date).getTime() > current_time) actual_events.push(event);
-        }
-    console.log('actual events::', actual_events);
-
-    if (actual_events.length === 1) {
-        message = `You have one event: ${actual_events[0].event_name} ${formatDateTime(actual_events[0].date)}`;
-    } else if (actual_events.length > 1) {
-        message = `You have ${actual_events.length} events:`;
-        for (let i = 0; i < actual_events.length; i++) {
-            message += `\n${i + 1}. ${actual_events[i].event_name} ${formatDateTime(actual_events[i].date)}`;
-        }
+  if (items.length > 0)
+    for (const event of items) {
+      if (new Date(event.date).getTime() > currentTime) actualEvents.push(event);
     }
+  console.log('actual events::', actualEvents);
 
-    sendTextMessage(sender_psid, message);
+  if (actualEvents.length === 1) {
+    message = `You have one event: ${actualEvents[0].event_name} ${formatDateTime(
+      actualEvents[0].date,
+    )}`;
+  } else if (actualEvents.length > 1) {
+    message = `You have ${actualEvents.length} events:`;
+    for (let i = 0; i < actualEvents.length; i += 1) {
+      message += `\n${i + 1}. ${actualEvents[i].event_name} ${formatDateTime(
+        actualEvents[i].date,
+      )}`;
+    }
+  }
+
+  sendTextMessage(senderPSID, message);
 }
 
-function removeReminders(sender_psid, user_events, response) {
-    const remove_name = response.parameters.fields.name.stringValue;
-    const if_all = response.parameters.fields.all.stringValue;
-    let remove_time = timeMaster(response.parameters.fields.date_time, remove_name);
-    let events_to_delete = [];
+function removeReminders(senderPSID, userEvents, response) {
+  const removeName = response.parameters.fields.name.stringValue;
+  const ifAll = response.parameters.fields.all.stringValue;
+  const removeTime = timeMaster(response.parameters.fields.date_time, removeName);
+  let eventsToDelete = [];
 
-    // If the user removes events by date
-    if (remove_time.startTime) {
-        if (remove_time.endTime) {
-            events_to_delete = filterByDuration(user_events, remove_time, remove_name);
-        } else events_to_delete = filterByDate(user_events, remove_time.startTime, remove_name);
+  // If the user removes events by date
+  if (removeTime.startTime) {
+    if (removeTime.endTime) {
+      eventsToDelete = filterByDuration(userEvents, removeTime, removeName);
+    } else eventsToDelete = filterByDate(userEvents, removeTime.startTime, removeName);
 
     // If the user removes events only by name
-    } else if (remove_name) {
-        for (let event of user_events) {
-            if (filterByName(event.event_name, remove_name)) {
-                events_to_delete.push(event);
-            }
-        }
+  } else if (removeName) {
+    for (const event of userEvents) {
+      if (filterByName(event.event_name, removeName)) {
+        eventsToDelete.push(event);
+      }
+    }
 
-        console.log('Delete only with name');
-    
+    console.log('Delete only with name');
+
     // If the user want to remove all his events
-    } else if (if_all) {
-        events_to_delete = user_events;
-    
-    }
+  } else if (ifAll) {
+    eventsToDelete = userEvents;
+  }
 
-    console.log(`Events to delete: ${events_to_delete}`);
+  console.log(`Events to delete: ${eventsToDelete}`);
 
-    if (events_to_delete) {
-        deleteEvents(events_to_delete);
-        sendTextMessage(sender_psid, 'Your events were deleted.');
-    }
+  if (eventsToDelete) {
+    deleteEvents(eventsToDelete);
+    sendTextMessage(senderPSID, 'Your events were deleted.');
+  }
 }
 
-function welcomeIntent(sender_psid) {
-    const welcomeTemplate = require('../messenger/templates/welcomeTemplate');
+function welcomeIntent(senderPSID) {
+  const { welcomeTemplate } = messengerTemplates;
 
-    sendAttachmentMessage(sender_psid, welcomeTemplate());
+  sendAttachmentMessage(senderPSID, welcomeTemplate());
 }
 
 function notify(items) {
-    const notifyTemplate = require('../messenger/templates/notifyTemplate');
+  const { notifyTemplate } = messengerTemplates;
 
-    if (items) {
-        for (let event of items) {
-            const response = notifyTemplate(event);
-            sendAttachmentMessage(event.userID, response);
-        }
+  if (items) {
+    for (const event of items) {
+      const response = notifyTemplate(event);
+      sendAttachmentMessage(event.userID, response);
     }
+  }
 }
 
 module.exports = { addReminders, showReminders, removeReminders, welcomeIntent, notify };

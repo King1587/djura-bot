@@ -1,87 +1,89 @@
-const MongoClient = require('mongodb').MongoClient;
+/* eslint-disable consistent-return */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-console */
+const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
 
+function addEvent(userID, eventName, date) {
+  const mongo = new MongoClient(uri, { useNewUrlParser: true });
+  mongo.connect((err, client) => {
+    if (err) return console.log('Error to conect to Mongo', err);
 
-function addEvent(user_id, event_name, date) {
-    const mongo = new MongoClient(uri, { useNewUrlParser: true });
-    mongo.connect((err, client) => {
-        if (err) return console.log('Error to conect to Mongo', err);
-        
-        const collection = client.db('djura').collection('events');
-    
-        let new_event = {
-            event_name: event_name,
-            userID: user_id,
-            date: date
-        };
+    const collection = client.db('djura').collection('events');
 
-        console.log('New event:', new_event);
-    
-        collection.insertOne(new_event, err => {
-            if (err) return console.log(`ERROR in insert event to database: ${err}`);
-    
-            client.close();
-        });
+    const newEvent = {
+      event_name: eventName,
+      userID,
+      date,
+    };
+
+    console.log('New event:', newEvent);
+
+    collection.insertOne(newEvent, error => {
+      if (error) return console.log(`ERROR in insert event to database: ${error}`);
+
+      client.close();
     });
+  });
 }
 
-function findUsersEvents(user_id) {
-    return MongoClient(uri, { useNewUrlParser: true }).connect().then(client => {
-        const collection = client.db('djura').collection('events');
+function findUsersEvents(userID) {
+  return MongoClient(uri, { useNewUrlParser: true })
+    .connect()
+    .then(client => {
+      const collection = client.db('djura').collection('events');
 
-        return collection.find({userID: user_id}).toArray();
-    }).then(items => {
-        return items;
-    });
+      return collection.find({ userID }).toArray();
+    })
+    .then(items => items);
 }
 
 function getAllEvents() {
-    return MongoClient(uri, { useNewUrlParser: true }).connect().then(client => {
-        const collection = client.db('djura').collection('events');
+  return MongoClient(uri, { useNewUrlParser: true })
+    .connect()
+    .then(client => {
+      const collection = client.db('djura').collection('events');
 
-        return collection.find().toArray();
-    }).then(items => {
-        return items;
-    });
+      return collection.find().toArray();
+    })
+    .then(items => items);
 }
 
 function deleteEvents(events) {
-    const mongo = new MongoClient(uri, { useNewUrlParser: true });
+  const mongo = new MongoClient(uri, { useNewUrlParser: true });
 
-    mongo.connect((err, client) => {
-        const collection = client.db('djura').collection('events');
+  mongo.connect((err, client) => {
+    const collection = client.db('djura').collection('events');
 
-        for (let event of events) {
-            console.log('event to delete', event);
-            collection.deleteOne({ _id: event._id }, err => {
-                if (err) return console.log('delete event error', err);
+    for (const event of events) {
+      console.log('event to delete', event);
+      // eslint-disable-next-line no-underscore-dangle
+      collection.deleteOne({ _id: event._id }, error => {
+        if (error) return console.log('delete event error', error);
 
-                console.log(`delete event ${event._id} successful`);
-            });
-        }
-    });
+        // eslint-disable-next-line no-underscore-dangle
+        console.log(`delete event ${event._id} successful`);
+      });
+    }
+  });
 }
 
-function snooze(event_id, updated_time) {
-    const mongo = new MongoClient(uri, { useNewUrlParser: true });
+function snooze(eventID, updatedTime) {
+  const mongo = new MongoClient(uri, { useNewUrlParser: true });
 
-    mongo.connect((err, client) => {
-        const collection = client.db('djura').collection('events');
+  mongo.connect((err, client) => {
+    const collection = client.db('djura').collection('events');
 
-        console.log('event to update:', event_id);
-        console.log('date:', updated_time);
+    console.log('event to update:', eventID);
+    console.log('date:', updatedTime);
 
-        collection.updateOne(
-            { _id: event_id },
-            {$set:{ date: updated_time } },
-            (err, result) => {
-                if (err) return console.log('ERROR in update Mongo function:', err);
+    collection.updateOne({ _id: eventID }, { $set: { date: updatedTime } }, (error, result) => {
+      if (error) return console.log('ERROR in update Mongo function:', error);
 
-                console.log(result);
-            }
-        );
+      console.log(result);
     });
+  });
 }
 
 module.exports = { addEvent, findUsersEvents, getAllEvents, deleteEvents, snooze };
