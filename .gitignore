@@ -10,3 +10,7 @@ variables.env
 # Тимчасові файли
 *.tmp
 *~
+
+# Workday Manager Config
+.workdays_config
+workday.so
