@@ -46,6 +46,8 @@ function formatDateTime(dateTime) {
 function filterByName(eventName, removeName) {
   const wordList = removeName.split(' ');
 
+  // AHAHAH
+
   for (const word of wordList) {
     if (eventName.indexOf(word) < 0) return false;
   }
