@@ -54,7 +54,7 @@
     "dialogflow": "^0.9.1",
     "express": "^4.17.1",
     "mongodb": "^3.2.7",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.7",
     "pb-util": "^0.1.0",
     "pino": "^5.12.6",
     "pino-pretty": "^3.2.0",
